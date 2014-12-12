@@ -19,10 +19,15 @@ package com.astuetz;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -151,6 +156,8 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		shouldExpand = a.getBoolean(R.styleable.PagerSlidingTabStrip_pstsShouldExpand, shouldExpand);
 		scrollOffset = a.getDimensionPixelSize(R.styleable.PagerSlidingTabStrip_pstsScrollOffset, scrollOffset);
 		textAllCaps = a.getBoolean(R.styleable.PagerSlidingTabStrip_pstsTextAllCaps, textAllCaps);
+
+        dividerColor = Color.TRANSPARENT;
 
 		a.recycle();
 
@@ -334,7 +341,12 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 			lineRight = (currentPositionOffset * nextTabRight + (1f - currentPositionOffset) * lineRight);
 		}
 
-		canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, rectPaint);
+        float w = lineRight - lineLeft;
+        float h = indicatorHeight;
+//        BitmapFactory.decodeResource(getResources(), R.drawable.indicator);
+        Bitmap ninePatch = getNinePatch(R.drawable.indicator, (int) w, (int) h, getContext());
+//        canvas.drawRect(lineLeft, height - indicatorHeight, lineRight, height, rectPaint);
+        canvas.drawBitmap(ninePatch, lineLeft, height - indicatorHeight, rectPaint);
 
 		// draw underline
 
@@ -350,7 +362,23 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		}
 	}
 
-	private class PageListener implements OnPageChangeListener {
+    public static Bitmap getNinePatch(int id, int x, int y, Context context) {
+        // id is a resource id for a valid ninepatch
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), id);
+
+        byte[] chunk = bitmap.getNinePatchChunk();
+        NinePatchDrawable np_drawable = new NinePatchDrawable(bitmap, chunk, new Rect(), null);
+        np_drawable.setBounds(0, 0, x, y);
+
+        Bitmap output_bitmap = Bitmap.createBitmap(x, y, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output_bitmap);
+        np_drawable.draw(canvas);
+
+        return output_bitmap;
+    }
+
+
+    private class PageListener implements OnPageChangeListener {
 
 		@Override
 		public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
